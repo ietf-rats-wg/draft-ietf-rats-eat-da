@@ -1,10 +1,10 @@
 ---
 title: "An EAT Profile for Trustworthy Device Assignment"
 abbrev: "EAT DA"
-category: info
+category: std
 
-docname: draft-poirier-rats-eat-da-latest
-submissiontype: independent
+docname: draft-ietf-rats-eat-da-latest
+submissiontype: IETF
 number:
 date:
 consensus: false
