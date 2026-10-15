@@ -20,8 +20,8 @@ venue:
   type: "Working Group"
   mail: "rats@ietf.org"
   arch: "https://mailarchive.ietf.org/arch/browse/rats/"
-  github: "rats-device-attestation/draft-poirier-rats-eat-da"
-  latest: "https://rats-device-attestation.github.io/draft-poirier-rats-eat-da/draft-poirier-rats-eat-da.html"
+  github: "ietf-rats-wg/draft-ietf-rats-eat-da"
+  latest: "https://ietf-rats-wg.github.io/draft-ietf-rats-eat-da/draft-ietf-rats-eat-da.html"
 
 author:
  -
