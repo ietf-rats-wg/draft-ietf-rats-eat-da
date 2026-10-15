@@ -1,3 +1,4 @@
+
 .tags
 *.html
 *.pdf
@@ -17,6 +18,11 @@
 /node_modules/
 /versioned/
 archive.json
+cddl/*-autogen.cddl
+cddl/examples/*.cbor
+cddl/examples/*.hex
+cddl/examples/*.pretty
+draft-ietf-rats-eat-da.xml
 draft-poirier-rats-eat-da.xml
 Gemfile.lock
 package-lock.json

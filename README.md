@@ -1,23 +1,22 @@
 <!-- regenerate: on (set to off if you edit this file) -->
 
-# EAT Profile for Device Attestation
+# An EAT Profile for Trustworthy Device Assignment
 
-This is the working area for the individual Internet-Draft, "EAT Profile for Device Attestation".
+This is the working area for the IETF [RATS Working Group](https://datatracker.ietf.org/group/rats/documents/) Internet-Draft, "An EAT Profile for Trustworthy Device Assignment".
 
-* [Editor's Copy](https://rats-device-attestation.github.io/draft-poirier-rats-eat-da/#go.draft-poirier-rats-eat-da.html)
-* [Datatracker Page](https://datatracker.ietf.org/doc/draft-poirier-rats-eat-da)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-poirier-rats-eat-da)
-* [Compare Editor's Copy to Individual Draft](https://rats-device-attestation.github.io/draft-poirier-rats-eat-da/#go.draft-poirier-rats-eat-da.diff)
+* [Editor's Copy](https://ietf-rats-wg.github.io/draft-ietf-rats-eat-da/#go.draft-ietf-rats-eat-da.html)
+* [Datatracker Page](https://datatracker.ietf.org/doc/draft-ietf-rats-eat-da)
+* [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-rats-eat-da)
+* [Compare Editor's Copy to Working Group Draft](https://ietf-rats-wg.github.io/draft-ietf-rats-eat-da/#go.draft-ietf-rats-eat-da.diff)
 
 
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/rats-device-attestation/draft-poirier-rats-eat-da/blob/main/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/ietf-rats-wg/draft-ietf-rats-eat-da/blob/origin/CONTRIBUTING.md).
 
-Contributions can be made by creating pull requests.
-The GitHub interface supports creating pull requests using the Edit (✏) button.
-
+The contributing file also has tips on how to make contributions, if you
+don't already know how to do that.
 
 ## Command Line Usage
 
