@@ -34,8 +34,8 @@ author:
     email: henk.birkholz@ietf.contact
  -
     fullname: Thomas Fossati
-    organization: Linaro
-    email: thomas.fossati@linaro.org
+    organization: NVIDIA
+    email: tfossati@nvidia.com
 
 normative:
   RFC9711: rats-eat
