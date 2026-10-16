@@ -14,7 +14,7 @@ else
 endif
 endif
 
-$(drafts_xml): cddl/da-token-autogen.cddl
+$(drafts_xml) $(addprefix $(VERSIONED)/,$(addsuffix .xml,$(drafts_next) $(draft_releases))): cddl/da-token-autogen.cddl
 
 cddl/da-token-autogen.cddl: ; $(MAKE) -C cddl check
 
