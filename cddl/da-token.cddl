@@ -8,5 +8,6 @@ dat = {
 
 device-name = text
 
-$device-claims-set /= spdm-claims
+$device-claims-set /= spdm-raw-claims
+$device-claims-set /= spdm-extracted-claims
 $device-claims-set /= pcie-legacy-claims

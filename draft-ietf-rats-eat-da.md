@@ -51,8 +51,9 @@ normative:
   RFC9052: cose
   RFC9053: cose-algs
   RFC9334: rats-arch
-  I-D.ietf-rats-msg-wrap: cmw
+  RFC9999: cmw
   I-D.ietf-rats-epoch-markers: epoch-markers
+  RFC10013: eatmc
 
 informative:
   I-D.ietf-rats-corim: corim
@@ -179,7 +180,7 @@ Each individual submodule is the combination of a device name and a standard cla
 The syntax of the device name depends on the type of bus or protocol used.
 Each name consists of two parts joined by a colon: a namespace and a bus-specific name.
 See {{spdm-submod-name}} for SPDM devices, and {{pcie-legacy-submod-name}} for legacy PCIe devices.
-As previously mentioned, this draft currently defines the claims-set for SPDM compliant devices and PCIe legacy devices that do not support the SPDM protocol.
+As previously mentioned, this draft currently defines the claims-sets (raw and extracted) for SPDM compliant devices and PCIe legacy devices that do not support the SPDM protocol.
 Careful consideration was also given to the overall design in order to leave room for future expansion.
 
 ~~~ cddl
@@ -188,28 +189,99 @@ Careful consideration was also given to the overall design in order to leave roo
 
 ## SPDM Claims {#spdm-claims}
 
-A SPDM claim instance is expected to be present for each SPDM compatible device to be attested.
-Each instance consists of a measurements section, a certificates section, or both.
-These can be supplemented with two additional sections: (1) a challenge for Component Mesaurement and Authentication (CMA) scenarios and (2) a device interface report that contains information from the TEE Device Information Security Protocol (TDISP) Device Interface Report (see Chapter 11 of {{-pcie}}).
-A challenge needs certificate information from the certificate section and as such, can only be present if certificates are included in the SPDM artifacts.
-TDISP messages are embedded in the VENDOR_DEFINED_REQUEST and VENDOR_DEFINED_RESPONSE messages of the SPDM protocol.
-Optionally, the Negotiated State preamble (version, capabilities and algorithms) bytes can be included to present the full negotiated state between the SPDM requester and responder.
+A claims-set is expected to be present for each SPDM compatible device to be attested.
+SPDM claims come in two flavours, each with its own EAT profile identifier and claims-set:
+
+* Raw claims ({{spdm-raw-claims}}) carry a verbatim transcript of the relevant SPDM message exchanges, each carried in a dedicated claim.
+  They target Verifiers that want to re-check the protocol run, including the device's signature, which covers the nonce supplied by the Verifier.
+* Extracted claims ({{spdm-extracted-claims}}) carry a synthesised, yet faithful, view of the core properties of the device: its identity and the state of its firmware and configuration.
+  They target Verifiers that only need identity and state, and benefit from simpler appraisal logic.
+
+Typically (see {{fig-spdm-flow}}), an Evidence Collector obtains the SPDM artefacts from the device and emits raw claims.
+An Evidence Extractor can then turn the raw claims into extracted claims.
+A Lead Attester can forward raw claims or extracted claims to the Verifier.
+Extracted claims can optionally carry the raw artefacts they were derived from ({{spdm-raw-artefacts}}).
+
+~~~ aasvg
+                 .-------------.
+                | Verifier / RP |
+                 '-------------'
+                        ^
+                        | raw/extr
+========================|=====================================
+                        |                   .----------------.
+                .-------+-------.  raw      | Secret Release |
+      .-------->| Lead Attester |<-----.    | Policy (PCR)   |
+     |          '---------------'       |   '-------+--------'
+     |                  ^               |           |
+     |                  | extr          |       .---+---.
+     | log      .-------+------------.  |      |         |
+     | raw      | Evidence Extractor +--)----->|'-------'|
+     |          '--------------------'  | extr | Sealing |
+     |                  ^               |      | Log     |
+ .---+---.              | raw           |       '-------'
+|         |             |               |
+|'-------'|     .-------+------------.  |
+| Event   |<----+ Evidence Collector +-'
+| Log     | raw '--------------------'
+ '-------'              ^
+                        | SPDM
+========================|=====================================
+                        |
+                .-------+---------.
+                | Device Attester |
+                '-----------------'
+~~~
+{: #fig-spdm-flow title="SPDM Collection/Extraction Flows" align="center" }
+
+A DAT MUST NOT contain both a raw and an extracted claims-set for the same device.
+An Attester that needs to convey both forms for a device uses the extracted claims-set and includes the raw artefacts in it ({{spdm-raw-artefacts}}).
+
+### SPDM Raw Claims {#spdm-raw-claims}
+
+The raw claims-set conveys the SPDM artefacts as opaque byte strings, without interpreting its content.
+It consists of:
+
+* `vca`: the Negotiated State Preamble, i.e., the concatenation of messages GET_VERSION, VERSION, GET_CAPABILITIES, CAPABILITIES, NEGOTIATE_ALGORITHMS, and ALGORITHMS last exchanged between the SPDM Requester and Responder.
+  It conveys the full negotiated state (version, capabilities and algorithms).
+* `raw-measurements` (optional): the transcript of the GET_MEASUREMENTS requests and MEASUREMENTS responses.
+  It is absent if the device does not support measurements (see the MEAS_CAP field in the CAPABILITIES response of {{-spdm}}).
+  Since the transcript includes the nonces and the signature generated by the device, a Verifier can check the signature, and thus freshness, by itself.
+* `certificate-chain`: the certificates provided by the device, in the format defined in {{spdm-certificates}}.
+* `raw-measurement-extension-log` (optional): the Measurement Extension Log (MEL), as defined in {{-spdm}}, either inlined as a byte string or detached ({{mel-detached}}).
+* `tdisp-device-interface-report` (optional): the TDISP Device Interface Report ({{interface-report}}).
 
 ~~~ cddl
-{::include-fold cddl/spdm-claims.cddl}
+{::include-fold cddl/spdm-raw-claims.cddl}
 ~~~
 
-### Measurements Claim {#spdm-measurements}
+### SPDM Extracted Claims {#spdm-extracted-claims}
+
+The extracted claims-set conveys information that has been parsed out of the SPDM artefacts.
+It consists of:
+
+* `extracted-measurements` (optional): the measurements ({{spdm-measurements}}).
+  It is absent if the device does not support measurements (see the MEAS_CAP field in the CAPABILITIES response of {{-spdm}}).
+* `certificates`: the certificates ({{spdm-certificates}}), from which the identity of the device is derived.
+* `raw-artefacts` (optional): the raw transcripts from which the claims above were extracted ({{spdm-raw-artefacts}}).
+* `extracted-measurement-extension-log` (optional): the Measurement Extension Log, either inlined or detached ({{mel-detached}}).
+  The inlined form (`mel-data`) carries, together with the log itself, the metadata needed to interpret it that would otherwise be found in the VCA: the selected MEL specification (`mel-specification-sel`) and the selected measurement specification (`measurement-specification-sel`).
+* `tdisp-device-interface-report` (optional): the TDISP Device Interface Report ({{interface-report}}).
+
+~~~ cddl
+{::include-fold cddl/spdm-extracted-claims.cddl}
+~~~
+
+#### Measurements Claim {#spdm-measurements}
 
 The SPDM specification reserves measurement indexes between 240 and 255, leaving space for 239 measurements per device.
-The entire measurement log is optionally signed by the certificate populated in one of the 8 certificate slots.
 It should be noted that measurements formalized herein follow the DMTF measurement specification (see Table 55 of {{-spdm}}).
 
 ~~~ cddl
 {::include-fold cddl/spdm-measurements.cddl}
 ~~~
 
-#### Measurement
+##### Measurement
 
 SPDM measurements start with a component type that reflects one of the 10 categories defined by the SPDM specification.
 Following is the measurement itself represented by either a raw bitstream or a digest.
@@ -219,18 +291,7 @@ The size of the digest value is derived from the measurement hash algorithm conv
 {::include-fold cddl/spdm-measurement.cddl}
 ~~~
 
-### SPDM Challenge Claim {#spdm-challenge}
-
-SPDM compliant devices can optionally support the capability to authenticate responders through the challenge-response protocol and sign measurements.
-Included in the signature are all the elements needed by a third party entity to reconstruct the original transcript or measurement log signed by the device.
-Those elements include M1 for challenge signatures or L1 for measurement signatures (see CDDL below), the combined SPDM prefix, the hash algorithm used to generate a digest of the measurement log and nonces provided by the requester and responder.
-The slot number of the leaf certificate used to sign the measurement log is also provided.
-
-~~~ cddl
-{::include-fold cddl/spdm-signature.cddl}
-~~~
-
-### Certificate Claims {#spdm-certificates}
+#### Certificate Claims {#spdm-certificates}
 
 According to the specification, SPDM compliant devices should support at most 8 slots, with slot 0 populated by default.
 Slot 0 SHALL contain a certificate chain that follows the Device certificate model or the Alias certificate model.
@@ -244,11 +305,25 @@ If so, it should not be used to validate the chain without first confirming its 
 {::include-fold cddl/spdm-certificates.cddl}
 ~~~
 
-### TDISP Device Interface Report {#interface-report}
+#### Raw Artefacts Claim {#spdm-raw-artefacts}
+
+The `raw-artefacts` claim carries the `vca` and `raw-measurements` claims defined in {{spdm-raw-claims}}, with the same semantics.
+All its members are optional.
+It is intended for debugging, and for Verifiers that want to cross-check the extracted claims against the transcript.
+
+#### Detached Measurement Extension Log {#mel-detached}
+
+A MEL can be conveyed detached from the claims-set, e.g., because of its size.
+In this case, the claim holds a map with a URI (`href`) from which the CBOR-encoded inlined form can be retrieved, and the digest (`thumbprint`) of that encoding, in the `digest` format of {{Section 4.2 of -eatmc}}.
+The Verifier MUST check the retrieved MEL against the thumbprint.
+
+#### TDISP Device Interface Report Claim {#interface-report}
 
 A TDISP Device Interface Report can only be obtained if the device interface has transitioned to the CONFIG_LOCK or RUN state of the TDISP state machine.
 Once in either of these states, the device's firmware ensures that modifications to the interface can't be made by an untrusted party.
-Trust in the device firmware's implemenation is imparted by its measurement and the signature it generates, both verifiable by a 3rd party entity.
+The claim is an optional member of both the raw and the extracted claims-sets.
+When it is present in the raw claims-set, trust in the device firmware's implementation is imparted by its measurement and by the signature that the device generates over the measurement transcript, both verifiable by a 3rd party entity.
+This statement does not apply to the extracted claims-set, which does not carry the signature.
 
 A TDISP Device Interface Report begins with various bitfields indicating the state and characteristics of the PCIe device interface.
 Next are 3 register fields pertaining to MSI-X (Message Signalled Interrupts), LNR (Lightweight Notification Requester) and TPH (TLP Processing Hints) capabilities.
@@ -262,9 +337,6 @@ The `tdisp-device-interface-report` map MUST NOT be empty.
 {::include-fold cddl/tdisp-device-interface-report.cddl}
 ~~~
 
-### Negotiated State Preamble (Version, Capabilities and Algorithms) {#spdm-vca}
-
-The Negotiated State Preamble (i.e., `vca`) claim contains the concatenation of messages GET_VERSION, VERSION, GET_CAPABILITIES, CAPABILITIES, NEGOTIATE_ALGORITHMS, and ALGORITHMS last exchanged between the SPDM Requester and Responder.
 
 ### Submodule Naming {#spdm-submod-name}
 
@@ -415,17 +487,17 @@ The differential encryption considerations discussed in {{Section 9.4 (Multiple 
 
 IANA is requested to register the following claims in the "CBOR Web Token (CWT) Claims" registry {{IANA.cwt}}.
 
-### SPDM Measurements Claim
+### SPDM Extracted Measurements Claim
 
-* Claim Name: spdm-measurements
-* Claim Description: SPDM Measurements
+* Claim Name: spdm-extracted-measurements
+* Claim Description: SPDM Extracted Measurements
 * JWT Claim Name: N/A
 * Claim Key: CPA3802
 * Claim Value Type(s): map
 * Change Controller: IETF
 * Specification Document(s): {{spdm-measurements}} of {{&SELF}}
 
-### SPDM Certificates Claim
+### SPDM Certificates Claim
 
 * Claim Name: spdm-certificates
 * Claim Description: SPDM Certificates
@@ -435,7 +507,7 @@ IANA is requested to register the following claims in the "CBOR Web Token (CWT) 
 * Change Controller: IETF
 * Specification Document(s): {{spdm-certificates}} of {{&SELF}}
 
-### SPDM VCA Claim
+### SPDM VCA Claim
 
 * Claim Name: spdm-vca
 * Claim Description: SPDM Version, Capabilities and Algorithms
@@ -443,7 +515,7 @@ IANA is requested to register the following claims in the "CBOR Web Token (CWT) 
 * Claim Key: CPA3804
 * Claim Value Type(s): bytes
 * Change Controller: IETF
-* Specification Document(s): {{spdm-vca}} of {{&SELF}}
+* Specification Document(s): {{spdm-raw-claims}} of {{&SELF}}
 
 ### PCIe Legacy Device Text Claim
 
@@ -465,15 +537,35 @@ IANA is requested to register the following claims in the "CBOR Web Token (CWT) 
 * Change Controller: IETF
 * Specification Document(s): {{pcie-legacy-device}} of {{&SELF}}
 
-### SPDM Challenge Claim
+### SPDM Raw Measurements Claim
 
-* Claim Name: spdm-challenge
-* Claim Description: SPDM Challenge signature block
+* Claim Name: spdm-raw-measurements
+* Claim Description: SPDM Raw Measurements Transcript
 * JWT Claim Name: N/A
-* Claim Key: CPA3807
-* Claim Value Type(s): map
+* Claim Key: CPA3809
+* Claim Value Type(s): bytes
 * Change Controller: IETF
-* Specification Document(s): {{spdm-challenge}} of {{&SELF}}
+* Specification Document(s): {{spdm-raw-claims}} of {{&SELF}}
+
+### SPDM Certificate Chain Claim
+
+* Claim Name: spdm-certificate-chain
+* Claim Description: SPDM Raw Certificate Chain
+* JWT Claim Name: N/A
+* Claim Key: CPA3810
+* Claim Value Type(s): bytes
+* Change Controller: IETF
+* Specification Document(s): {{spdm-raw-claims}} of {{&SELF}}
+
+### SPDM Raw Measurement Extension Log Claim
+
+* Claim Name: spdm-raw-measurement-extension-log
+* Claim Description: SPDM Raw Measurement Extension Log
+* JWT Claim Name: N/A
+* Claim Key: CPA3811
+* Claim Value Type(s): bytes
+* Change Controller: IETF
+* Specification Document(s): {{spdm-raw-claims}} of {{&SELF}}
 
 ### TDISP Device Interface Report
 
@@ -484,6 +576,27 @@ IANA is requested to register the following claims in the "CBOR Web Token (CWT) 
 * Claim Value Type(s): map
 * Change Controller: IETF
 * Specification Document(s): {{interface-report}} of {{&SELF}}
+
+
+### SPDM Raw Artefacts Claim
+
+* Claim Name: spdm-raw-artefacts
+* Claim Description: SPDM Raw Artefacts
+* JWT Claim Name: N/A
+* Claim Key: CPA3812
+* Claim Value Type(s): map
+* Change Controller: IETF
+* Specification Document(s): {{spdm-raw-artefacts}} of {{&SELF}}
+
+### SPDM Extracted Measurement Extension Log Claim
+
+* Claim Name: spdm-extracted-measurement-extension-log
+* Claim Description: SPDM Extracted Measurement Extension Log
+* JWT Claim Name: N/A
+* Claim Key: CPA3813
+* Claim Value Type(s): bytes
+* Change Controller: IETF
+* Specification Document(s): {{spdm-extracted-claims}} of {{&SELF}}
 
 --- back
 
