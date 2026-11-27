@@ -1,0 +1,23 @@
+; Negotiation transcript (GET_VERSION ... ALGORITHMS)
+vca-claim = ( &(vca: 3804) => bytes )
+
+tdisp-claim = ( &(tdisp-device-interface-report: 3808) => tdisp-device-interface-report )
+
+; Metadata needed to interpret the MEL, normally found in the VCA
+mel-data = {
+  &(measurement-extension-log: 0) => measurement-extension-log-type
+  &(mel-specification-sel: 1) => int
+  &(measurement-specification-sel: 2) => int
+}
+
+measurement-extension-log-type = bytes
+
+; The CBOR-encoded inlined form is retrieved from href and
+; checked against thumbprint
+mel-detached = {
+  &(href: 0) => uri
+  &(thumbprint: 1) => eatmc.digest
+}
+
+; digest type from Section 4.2 of RFC 10013
+eatmc.digest = digest

@@ -1,0 +1,9 @@
+spdm-raw-claims = {
+  &(eat_profile: 265) => "tag:ietf.org,2026:eat/da/spdm-raw#1.0"
+  vca-claim
+  ? &(raw-measurements: 3809) => bytes   ; GET_MEASUREMENTS / MEASUREMENTS transcript
+  &(certificate-chain: 3810) => spdm-certificates
+  ? &(raw-measurement-extension-log: 3811) => bytes / mel-detached
+  ? tdisp-claim
+}
+

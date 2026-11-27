@@ -1,0 +1,15 @@
+spdm-extracted-claims = {
+  &(eat_profile: 265) => "tag:ietf.org,2026:eat/da/spdm-extracted#1.0"
+  ? &(extracted-measurements: 3802) => spdm-measurements
+  &(certificates: 3803) => spdm-certificates
+  ? &(raw-artefacts: 3812) => spdm-raw-artefacts
+  ? &(extracted-measurement-extension-log: 3813) => mel-data / mel-detached
+  ? tdisp-claim
+}
+
+; Raw transcripts, e.g., for debugging
+spdm-raw-artefacts = {
+  ? vca-claim
+  ? &(raw-measurements: 3809) => bytes
+}
+
