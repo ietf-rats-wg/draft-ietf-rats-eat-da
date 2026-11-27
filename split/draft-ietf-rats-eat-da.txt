@@ -5,10 +5,10 @@
 Remote ATtestation ProcedureS                                 M. Poirier
 Internet-Draft                                                    Linaro
 Intended status: Standards Track                             H. Birkholz
-Expires: 27 May 2027                                      Fraunhofer SIT
+Expires: 31 May 2027                                      Fraunhofer SIT
                                                               T. Fossati
                                                                   NVIDIA
-                                                        23 November 2026
+                                                        27 November 2026
 
 
             An EAT Profile for Trustworthy Device Assignment
@@ -61,7 +61,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 May 2027.
+   This Internet-Draft will expire on 31 May 2027.
 
 Copyright Notice
 
@@ -291,20 +291,21 @@ Table of Contents
    *  Raw claims (Section 3.1.1) carry a verbatim transcript of the
       relevant SPDM message exchanges, each carried in a dedicated
       claim.  They target Verifiers that want to re-check the protocol
-      run, e.g., to supply their own nonce.
+      run, including the device's signature, which covers the nonce
+      supplied by the Verifier.
 
-   *  Extracted claims (Section 3.1.2) carry an abstract, yet faithful,
-      view of the core properties of the device: its identity and the
-      state of its firmware and configuration.  They target Verifiers
-      that only need identity and state, and benefit from simpler
-      appraisal logic.
+   *  Extracted claims (Section 3.1.2) carry a synthesised, yet
+      faithful, view of the core properties of the device: its identity
+      and the state of its firmware and configuration.  They target
+      Verifiers that only need identity and state, and benefit from
+      simpler appraisal logic.
 
-   Typically (see Figure 2), a Collector obtains the SPDM transcript
-   from the device and emits raw claims.  An Extractor can then turn the
-   raw claims into extracted claims.  A Lead Attester can forward raw
-   claims, extracted claims, or both to the Verifier.  Extracted claims
-   can optionally carry the raw artefacts they were derived from
-   (Section 3.1.2.3).
+   Typically (see Figure 2), an Evidence Collector obtains the SPDM
+   artefacts from the device and emits raw claims.  An Evidence
+   Extractor can then turn the raw claims into extracted claims.  A Lead
+   Attester can forward raw claims or extracted claims to the Verifier.
+   Extracted claims can optionally carry the raw artefacts they were
+   derived from (Section 3.1.2.3).
 
                     .-------------.
                    | Verifier / RP |
@@ -335,17 +336,17 @@ Table of Contents
                    | Device Attester |
                    '-----------------'
 
-                 Figure 2: SDPM Collection/Extraction Flows
+                 Figure 2: SPDM Collection/Extraction Flows
 
-
-   // The case where raw and extracted claims for the same device are
-   // sent side by side (as distinct submodules) is not yet addressed:
-   // the submodule name would need disambiguating.
+   A DAT MUST NOT contain both a raw and an extracted claims-set for the
+   same device.  An Attester that needs to convey both forms for a
+   device uses the extracted claims-set and includes the raw artefacts
+   in it (Section 3.1.2.3).
 
 3.1.1.  SPDM Raw Claims
 
-   The raw claims-set conveys the SPDM transcript as opaque byte
-   strings, without interpreting its content.  It consists of:
+   The raw claims-set conveys the SPDM artefacts as opaque byte strings,
+   without interpreting its content.  It consists of:
 
    *  vca: the Negotiated State Preamble, i.e., the concatenation of
       messages GET_VERSION, VERSION, GET_CAPABILITIES, CAPABILITIES,
@@ -383,26 +384,10 @@ Table of Contents
      ? tdisp-claim
    }
 
-   ; Negotiation transcript (GET_VERSION ... ALGORITHMS)
-   vca-claim = ( &(vca: 3804) => bytes )
-
-   tdisp-claim = ( &(tdisp-device-interface-report: 3808) => tdisp-\
-                                               device-interface-report )
-
-   ; The CBOR-encoded inlined form is retrieved from href and
-   ; checked against thumbprint
-   mel-detached = {
-     &(href: 0) => uri
-     &(thumbprint: 1) => eatmc.digest
-   }
-
-   ; digest type from Section 4.2 of RFC 10013
-   eatmc.digest = digest
-
 3.1.2.  SPDM Extracted Claims
 
    The extracted claims-set conveys information that has been parsed out
-   of the SPDM transcript.  It consists of:
+   of the SPDM artefacts.  It consists of:
 
    *  extracted-measurements (optional): the measurements
       (Section 3.1.2.1).  It is absent if the device does not support
@@ -444,15 +429,6 @@ Table of Contents
      ? vca-claim
      ? &(raw-measurements: 3809) => bytes
    }
-
-   ; Metadata needed to interpret the MEL, normally found in the VCA
-   mel-data = {
-     &(measurement-extension-log: 0) => measurement-extension-log-type
-     &(mel-specification-sel: 1) => int
-     &(measurement-specification-sel: 2) => int
-   }
-
-   measurement-extension-log-type = bytes
 
 3.1.2.1.  Measurements Claim
 
@@ -858,14 +834,6 @@ Table of Contents
      ? &(raw-measurement-extension-log: 3811) => bytes / mel-detached,
      ? tdisp-claim,
    }
-   vca-claim = (&(vca: 3804) => bytes)
-   tdisp-claim = (&(tdisp-device-interface-report: 3808) => tdisp-\
-                                                device-interface-report)
-   mel-detached = {
-     &(href: 0) => uri,
-     &(thumbprint: 1) => eatmc.digest,
-   }
-   eatmc.digest = digest
    spdm-extracted-claims = {
      &(eat_profile: 265) => "tag:ietf.org,2026:eat/da/spdm-extracted#1.\
                                                                      0",
@@ -880,12 +848,20 @@ Table of Contents
      ? vca-claim,
      ? &(raw-measurements: 3809) => bytes,
    }
+   vca-claim = (&(vca: 3804) => bytes)
+   tdisp-claim = (&(tdisp-device-interface-report: 3808) => tdisp-\
+                                                device-interface-report)
    mel-data = {
      &(measurement-extension-log: 0) => measurement-extension-log-type,
      &(mel-specification-sel: 1) => int,
      &(measurement-specification-sel: 2) => int,
    }
    measurement-extension-log-type = bytes
+   mel-detached = {
+     &(href: 0) => uri,
+     &(thumbprint: 1) => eatmc.digest,
+   }
+   eatmc.digest = digest
    spdm-measurement = {
      &(component-type: 1) => component-type,
      measurement,

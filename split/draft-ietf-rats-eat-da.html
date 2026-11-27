@@ -1052,7 +1052,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Poirier, et al.</td>
-<td class="center">Expires 27 May 2027</td>
+<td class="center">Expires 31 May 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1065,12 +1065,12 @@ svg {
 <dd class="internet-draft">draft-ietf-rats-eat-da-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-11-23" class="published">23 November 2026</time>
+<time datetime="2026-11-27" class="published">27 November 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-05-27">27 May 2027</time></dd>
+<dd class="expires"><time datetime="2027-05-31">31 May 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1131,7 +1131,7 @@ This document defines an attestation Evidence format for DA as an EAT (Entity At
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 27 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 31 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1519,18 +1519,18 @@ SPDM claims come in two flavours, each with its own EAT profile identifier and c
 <ul class="normal">
 <li class="normal" id="section-3.1-2.1">
             <p id="section-3.1-2.1.1">Raw claims (<a href="#spdm-raw-claims" class="auto internal xref">Section 3.1.1</a>) carry a verbatim transcript of the relevant SPDM message exchanges, each carried in a dedicated claim.
-They target Verifiers that want to re-check the protocol run, e.g., to supply their own nonce.<a href="#section-3.1-2.1.1" class="pilcrow">¶</a></p>
+They target Verifiers that want to re-check the protocol run, including the device's signature, which covers the nonce supplied by the Verifier.<a href="#section-3.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-3.1-2.2">
-            <p id="section-3.1-2.2.1">Extracted claims (<a href="#spdm-extracted-claims" class="auto internal xref">Section 3.1.2</a>) carry an abstract, yet faithful, view of the core properties of the device: its identity and the state of its firmware and configuration.
+            <p id="section-3.1-2.2.1">Extracted claims (<a href="#spdm-extracted-claims" class="auto internal xref">Section 3.1.2</a>) carry a synthesised, yet faithful, view of the core properties of the device: its identity and the state of its firmware and configuration.
 They target Verifiers that only need identity and state, and benefit from simpler appraisal logic.<a href="#section-3.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-3.1-3">Typically (see <a href="#fig-spdm-flow" class="auto internal xref">Figure 2</a>), a Collector obtains the SPDM transcript from the device and emits raw claims.
-An Extractor can then turn the raw claims into extracted claims.
-A Lead Attester can forward raw claims, extracted claims, or both to the Verifier.
+<p id="section-3.1-3">Typically (see <a href="#fig-spdm-flow" class="auto internal xref">Figure 2</a>), an Evidence Collector obtains the SPDM artefacts from the device and emits raw claims.
+An Evidence Extractor can then turn the raw claims into extracted claims.
+A Lead Attester can forward raw claims or extracted claims to the Verifier.
 Extracted claims can optionally carry the raw artefacts they were derived from (<a href="#spdm-raw-artefacts" class="auto internal xref">Section 3.1.2.3</a>).<a href="#section-3.1-3" class="pilcrow">¶</a></p>
-<span id="name-sdpm-collection-extraction-"></span><div id="fig-spdm-flow">
+<span id="name-spdm-collection-extraction-"></span><div id="fig-spdm-flow">
 <figure id="figure-2">
           <div id="section-3.1-4.1">
             <div class="alignCenter art-svg artwork" id="section-3.1-4.1.1">
@@ -1650,16 +1650,17 @@ Extracted claims can optionally carry the raw artefacts they were derived from (
 </div>
 </div>
 <figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
-<a href="#name-sdpm-collection-extraction-" class="selfRef">SDPM Collection/Extraction Flows</a>
+<a href="#name-spdm-collection-extraction-" class="selfRef">SPDM Collection/Extraction Flows</a>
           </figcaption></figure>
 </div>
-<p id="section-3.1-5"><span class="cref">The case where raw and extracted claims for the same device are sent side by side (as distinct submodules) is not yet addressed: the submodule name would need disambiguating.</span><a href="#section-3.1-5" class="pilcrow">¶</a></p>
+<p id="section-3.1-5">A DAT <span class="bcp14">MUST NOT</span> contain both a raw and an extracted claims-set for the same device.
+An Attester that needs to convey both forms for a device uses the extracted claims-set and includes the raw artefacts in it (<a href="#spdm-raw-artefacts" class="auto internal xref">Section 3.1.2.3</a>).<a href="#section-3.1-5" class="pilcrow">¶</a></p>
 <div id="spdm-raw-claims">
 <section id="section-3.1.1">
           <h4 id="name-spdm-raw-claims">
 <a href="#section-3.1.1" class="section-number selfRef">3.1.1. </a><a href="#name-spdm-raw-claims" class="section-name selfRef">SPDM Raw Claims</a>
           </h4>
-<p id="section-3.1.1-1">The raw claims-set conveys the SPDM transcript as opaque byte strings, without interpreting its content.
+<p id="section-3.1.1-1">The raw claims-set conveys the SPDM artefacts as opaque byte strings, without interpreting its content.
 It consists of:<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.1.1-2.1">
@@ -1695,21 +1696,6 @@ spdm-raw-claims = {
   ? tdisp-claim
 }
 
-; Negotiation transcript (GET_VERSION ... ALGORITHMS)
-vca-claim = ( &amp;(vca: 3804) =&gt; bytes )
-
-tdisp-claim = ( &amp;(tdisp-device-interface-report: 3808) =&gt; tdisp-\
-                                            device-interface-report )
-
-; The CBOR-encoded inlined form is retrieved from href and
-; checked against thumbprint
-mel-detached = {
-  &amp;(href: 0) =&gt; uri
-  &amp;(thumbprint: 1) =&gt; eatmc.digest
-}
-
-; digest type from Section 4.2 of RFC 10013
-eatmc.digest = digest
 </pre><a href="#section-3.1.1-3" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1719,7 +1705,7 @@ eatmc.digest = digest
           <h4 id="name-spdm-extracted-claims">
 <a href="#section-3.1.2" class="section-number selfRef">3.1.2. </a><a href="#name-spdm-extracted-claims" class="section-name selfRef">SPDM Extracted Claims</a>
           </h4>
-<p id="section-3.1.2-1">The extracted claims-set conveys information that has been parsed out of the SPDM transcript.
+<p id="section-3.1.2-1">The extracted claims-set conveys information that has been parsed out of the SPDM artefacts.
 It consists of:<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.1.2-2.1">
@@ -1761,14 +1747,6 @@ spdm-raw-artefacts = {
   ? &amp;(raw-measurements: 3809) =&gt; bytes
 }
 
-; Metadata needed to interpret the MEL, normally found in the VCA
-mel-data = {
-  &amp;(measurement-extension-log: 0) =&gt; measurement-extension-log-type
-  &amp;(mel-specification-sel: 1) =&gt; int
-  &amp;(measurement-specification-sel: 2) =&gt; int
-}
-
-measurement-extension-log-type = bytes
 </pre><a href="#section-3.1.2-3" class="pilcrow">¶</a>
 </div>
 <div id="spdm-measurements">
@@ -2237,14 +2215,6 @@ spdm-raw-claims = {
   ? &amp;(raw-measurement-extension-log: 3811) =&gt; bytes / mel-detached,
   ? tdisp-claim,
 }
-vca-claim = (&amp;(vca: 3804) =&gt; bytes)
-tdisp-claim = (&amp;(tdisp-device-interface-report: 3808) =&gt; tdisp-\
-                                             device-interface-report)
-mel-detached = {
-  &amp;(href: 0) =&gt; uri,
-  &amp;(thumbprint: 1) =&gt; eatmc.digest,
-}
-eatmc.digest = digest
 spdm-extracted-claims = {
   &amp;(eat_profile: 265) =&gt; "tag:ietf.org,2026:eat/da/spdm-extracted#1.\
                                                                   0",
@@ -2259,12 +2229,20 @@ spdm-raw-artefacts = {
   ? vca-claim,
   ? &amp;(raw-measurements: 3809) =&gt; bytes,
 }
+vca-claim = (&amp;(vca: 3804) =&gt; bytes)
+tdisp-claim = (&amp;(tdisp-device-interface-report: 3808) =&gt; tdisp-\
+                                             device-interface-report)
 mel-data = {
   &amp;(measurement-extension-log: 0) =&gt; measurement-extension-log-type,
   &amp;(mel-specification-sel: 1) =&gt; int,
   &amp;(measurement-specification-sel: 2) =&gt; int,
 }
 measurement-extension-log-type = bytes
+mel-detached = {
+  &amp;(href: 0) =&gt; uri,
+  &amp;(thumbprint: 1) =&gt; eatmc.digest,
+}
+eatmc.digest = digest
 spdm-measurement = {
   &amp;(component-type: 1) =&gt; component-type,
   measurement,
